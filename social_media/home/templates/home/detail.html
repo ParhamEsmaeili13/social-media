@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {% if request.user.id == post.user.id %}
+        <a href="{% url 'home:post_delete' post.id %}" class="btn btn-danger">DELETE</a>
+        <a href="{% url 'home:post_update' post.id %}" class="btn btn-info">UPDATE</a>
+    {% endif %}
+    
+    <P><a href="{% url 'accounts:user_profile' post.user.id %}">{{ post.user.username }}</a>- {{ post.updated|date:"M-d" }}</P>
+    <P>{{ post.body }}</P><hr>
+    
+    {% if request.user.is_authenticated %}
+        <form method="post"  action="">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <input type="submit" value="SEND">
+        </form><br>
+    {% else %}
+        <h3 class="alert alert-danger">only logged user can comment in this post</h3>
+    {% endif %}
+    
+    {% for comment in comments %}
+        <div class="card bg-dark text-white">
+            <p class="card-header">{{ comment.user }} | {{ comment.created|timesince }}</p>
+            <p class="card-body">{{ comment.body }}</p>
+        
+            {% if request.user.is_authenticated %}
+                <form method="post"  action="{% url 'home:add_reply' post.id comment.id %}">
+                    {% csrf_token %}
+                    {{ reply_form.as_p }}
+                    <input type="submit" value="SEND REPLY">
+                </form><br>
+            {% endif %}
+        
+            {% with replies=comment.reply_comments.all %}
+            {% for reply in replies %}
+                <P class="br-info p-2 m-2">{{ reply.user }}<br>{{ reply.body }}</P>
+            {% endfor %}
+            {% endwith %}
+        </div><br>
+        {% empty %}
+            <p class="card bg-dark text-white">No Comments </p>
+    {% endfor %}    
+{% endblock %}
