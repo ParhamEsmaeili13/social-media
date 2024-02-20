@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views import View
-from .forms import UserRegistrationForm, UserLoginForm
+from .forms import UserRegistrationForm, UserLoginForm, EditUserForm
 from .models import Relation
 
 
@@ -109,7 +109,7 @@ class UserFollowView(LoginRequiredMixin, View):
         if relation.exists():
             messages.error(request, 'you are already fallow each other in here', extra_tags='danger')
         else:
-            relation(from_user=request.user, to_user=user).save()
+            Relation(from_user=request.user, to_user=user).save()
             messages.success(request, 'you followed this user', extra_tags='success')
         return redirect('accounts:user_profile', user.id)
 
@@ -124,3 +124,21 @@ class UserUnfollowView(LoginRequiredMixin, View):
         else:
             messages.error(request, 'you are not fallowed each other', extra_tags='danger')
         return redirect('accounts:user_profile', user.id)
+
+
+class EditUserView(LoginRequiredMixin, View):
+    form_class = EditUserForm
+
+    def get(self, request):
+        form = self.form_class(instance=request.user.profile, initial={'email': request.user.email})
+        return render(request, 'accounts/edit_profile.html', {'form': form})
+
+    def post(self, request):
+        form = self.form_class(request.POST, instance=request.user.profile)
+        if form.is_valid():
+            form.save()
+            request.user.email = form.cleaned_data['email']
+            request.user.save()
+            messages.success(request, 'profile updated', extra_tags='success')
+        return redirect('accounts:user_profile', request.user.id)
+

@@ -1,13 +1,18 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from .models import Profile
 
 
 class UserRegistrationForm(forms.Form):
-    username = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'enter your username', 'class': 'form-control'}))
-    email = forms.EmailField(widget=forms.EmailInput(attrs={'placeholder': 'inter your email', 'class': 'form-control'}))
-    password1 = forms.CharField(label='password', widget=forms.PasswordInput(attrs={'placeholder': 'inter your password', 'class': 'form-control'}))
-    password2 = forms.CharField(label='confirm password', widget=forms.PasswordInput(attrs={'placeholder': 'inter your password', 'class': 'form-control'}))
+    username = forms.CharField(
+        widget=forms.TextInput(attrs={'placeholder': 'enter your username', 'class': 'form-control'}))
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={'placeholder': 'inter your email', 'class': 'form-control'}))
+    password1 = forms.CharField(label='password', widget=forms.PasswordInput(
+        attrs={'placeholder': 'inter your password', 'class': 'form-control'}))
+    password2 = forms.CharField(label='confirm password', widget=forms.PasswordInput(
+        attrs={'placeholder': 'inter your password', 'class': 'form-control'}))
 
     def clean_email(self):
         email = self.cleaned_data['email']
@@ -38,5 +43,9 @@ class UserLoginForm(forms.Form):
         widget=forms.PasswordInput(attrs={'placeholder': 'inter your password', 'class': 'form-control'}))
 
 
+class EditUserForm(forms.ModelForm):
+    email = forms.EmailField()
 
-
+    class Meta:
+        model = Profile
+        fields = ('age', 'bio')

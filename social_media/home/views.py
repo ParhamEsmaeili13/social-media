@@ -1,18 +1,22 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .models import Post, Comment
+from .models import Post, Comment, Vote
 from django.contrib import messages
-from .forms import PostCreateUpdateForm, CommentCreateForm, CommentReplyForm
+from .forms import PostCreateUpdateForm, CommentCreateForm, CommentReplyForm, PostSearchForm
 from django.utils.text import slugify
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 
 
 class HomeView(View):
+    class_form = PostSearchForm
+
     def get(self, request):
         posts = Post.objects.all()
-        return render(request, 'home/index.html', {'posts': posts})
+        if request.GET.get('search'):
+            posts = posts.filter(body__icontains=request.GET['search'])
+        return render(request, 'home/index.html', {'posts': posts, 'form': self.class_form})
 
 
 class PostDetailView(View):
@@ -29,17 +33,16 @@ class PostDetailView(View):
                       {'post': self.post_instance, 'comments': comments, 'form': self.form_class,
                        'reply_form': self.form_class_reply})
 
-
-@method_decorator(login_required)
-def post(self, request, *args, **kwargs):
-    form = self.form_class(request.POST)
-    if form.is_valid():
-        new_comment = form.save(commit=False)
-        new_comment.user = request.user
-        new_comment.post = self.post_instance
-        new_comment.save()
-        messages.success(request, 'your comment added successfully!')
-        return redirect('home:post_detail', self.post_instance.id, self.post_instance.slug)
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            new_comment = form.save(commit=False)
+            new_comment.user = request.user
+            new_comment.post = self.post_instance
+            new_comment.save()
+            messages.success(request, 'your comment added successfully!')
+            return redirect('home:post_detail', self.post_instance.id, self.post_instance.slug)
 
 
 class PostDeleteView(LoginRequiredMixin, View):
@@ -116,4 +119,16 @@ class PostAddReplyView(LoginRequiredMixin, View):
             reply.is_reply = True
             reply.save()
             messages.success(request, 'your reply added', 'success')
+        return redirect('home:post_detail', post.id, post.slug)
+
+
+class PostLikeView(LoginRequiredMixin, View):
+    def get(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        like = Vote.objects.filter(post=post, user=request.user)
+        if like.exists():
+            messages.error(request, 'you already liked this post', 'danger')
+        else:
+            Vote.objects.create(post=post, user=request.user)
+            messages.success(request, 'you liked this post', 'success')
         return redirect('home:post_detail', post.id, post.slug)
