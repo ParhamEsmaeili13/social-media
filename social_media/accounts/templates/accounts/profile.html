@@ -13,7 +13,7 @@
         <a href="{% url 'accounts:user_follow' user.id %}" class="btn btn-success">FOLLOW</a>
 
     {% elif request.user.id != user.id and is_following %}
-        <a href="{% url 'accounts:user_unfollow' user.id %}" class="btn btn-success">UNFOLLOW</a>
+        <a href="{% url 'accounts:user_unfollow' user.id %}" class="btn btn-danger">UNFOLLOW</a>
     {% endif %}
 
     <div class="card">
